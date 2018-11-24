@@ -1,0 +1,355 @@
+---
+title: "Customer"
+author: "Mudassir"
+date: "October 11, 2018"
+output: rmarkdown::github_document
+---
+
+```{r}
+customer <- read.csv("customer.csv" , row.names = 1, stringsAsFactors = FALSE)
+tail(customer)
+```
+
+```{r}
+customer[customer == "No"] <-  0
+customer[customer == "Yes"] <- 1
+customer[customer == "Male"] <- 0
+customer[customer == "Female"] <- 1
+customer[customer == "Fiber optic"] <- 1
+customer[customer == "DSL"] <- 2
+customer[customer == "No phone service"] <- 2
+customer[customer == "Month-to-month"] <- 0
+customer[customer == "One year"] <- 1
+customer[customer == "Two year"] <- 2
+customer[customer == "Electronic check"] <- 0
+customer[customer == "Mailed check"] <- 1
+customer[customer == "Bank transfer (automatic)"] <-2
+customer[customer == "Credit card (automatic)"] <- 3
+customer[customer == "No internet service"] <- 2
+# Senior Citizen: No, Yes
+# Dependents: No, Yes
+# Phone Service: No, Yes
+# Multiple Lines: No, Yes, No phone service
+# Internet service : No, fiber optic, DSL
+# Online Security : No, Yes , No internet service
+# Online Backup : No , Yes , No internet service
+# Device Protection: No , Yes , No internet service
+# Tech Support: No, Yes , No internet service
+# Streaming TV: No , Yes , No internet service
+# Streaming Movies: No, Yes , No internet service
+# Contract: Month-to-month , One year , Two year
+```
+
+
+```{r}
+summary(customer)
+```
+
+```{r}
+customer$gender <- as.factor(customer$gender)
+customer$SeniorCitizen <- as.factor(customer$SeniorCitizen)
+customer$Partner <- as.factor(customer$Partner)
+customer$Dependents <- as.factor(customer$Dependents)
+customer$PhoneService <- as.factor(customer$PhoneService)
+customer$MultipleLines <- as.factor(customer$MultipleLines)
+customer$InternetService <- as.factor(customer$InternetService)
+customer$OnlineSecurity <- as.factor(customer$OnlineSecurity)
+customer$OnlineBackup <- as.factor(customer$OnlineBackup)
+customer$DeviceProtection <- as.factor(customer$DeviceProtection)
+customer$TechSupport <- as.factor(customer$TechSupport)
+customer$StreamingTV <- as.factor(customer$StreamingTV)
+customer$StreamingMovies <-as.factor(customer$StreamingMovies)
+customer$Contract <- as.factor(customer$Contract)
+customer$PaperlessBilling <- as.factor(customer$PaperlessBilling)
+customer$PaymentMethod <- as.factor(customer$PaymentMethod)
+customer$Churn <- as.factor(customer$Churn)
+
+```
+
+
+```{r}
+head(customer)
+```
+
+```{r}
+sapply(customer, function (x){sum(is.na(x))})
+```
+
+
+```{r}
+charge_predict <- lm(TotalCharges ~ . , data = customer)
+pred <- predict(charge_predict , data = customer)[is.na(customer$TotalCharges)]
+pred
+```
+
+```{r}
+customer$TotalCharges[is.na(customer$TotalCharges)] <- abs(pred)
+```
+
+```{r}
+sum(is.na(customer$TotalCharges))
+```
+
+```{r}
+library(tidyverse)
+library(ggplot2)
+```
+
+```{r}
+#install.packages("gridExtra")
+library(gridExtra)
+```
+
+
+
+```{r}
+p1 <- ggplot(data = customer) +
+  geom_bar(
+    mapping = aes(x = PhoneService, fill = PhoneService) , 
+    show.legend = F
+  ) + scale_x_discrete(labels= c("No" , "Yes"))
+p2 <- ggplot(data = customer) +
+  geom_bar(
+    mapping = aes (x = MultipleLines, fill = MultipleLines) , 
+    show.legend = F
+  ) + scale_x_discrete(labels= c("No" , "Yes" , "No Phone Service"))
+
+p3 <- ggplot(data = customer) +
+  geom_bar(
+    mapping = aes (x = InternetService, fill = InternetService) , 
+    show.legend = F
+  ) + scale_x_discrete(labels= c("No" , "Fiber Optic" , "DSL"))
+
+p4 <- ggplot(data = customer) +
+  geom_bar(
+    mapping = aes (x = OnlineSecurity, fill = OnlineSecurity) , 
+    show.legend = F
+  ) + scale_x_discrete(labels= c("No" , "Yes" , "No Internet Service"))
+
+p5 <- ggplot(data = customer) +
+  geom_bar(
+    mapping = aes (x = OnlineBackup, fill = OnlineBackup), 
+    show.legend = F
+  ) + scale_x_discrete(labels= c("No" , "Yes" , "No Internet Service"))
+
+p6 <- ggplot(data = customer) +
+  geom_bar(
+    mapping = aes (x = DeviceProtection, fill = DeviceProtection), 
+    show.legend = F
+  ) + scale_x_discrete(labels= c("No" , "Yes" , "No Internet Service"))
+
+p7 <- ggplot(data = customer) +
+  geom_bar(
+    mapping = aes (x = TechSupport, fill = TechSupport), 
+    show.legend = F
+  ) + scale_x_discrete(labels= c("No" , "Yes" , "No Internet Service"))
+
+p8 <- ggplot(data = customer) +
+  geom_bar(
+    mapping = aes (x = StreamingTV, fill = StreamingTV), 
+    show.legend = F
+  ) + scale_x_discrete(labels= c("No" , "Yes" , "No Internet Service"))
+
+p9 <- ggplot(data = customer) +
+  geom_bar(
+    mapping = aes (x = StreamingMovies, fill = StreamingMovies), 
+    show.legend = F
+  ) + scale_x_discrete(labels= c("No" , "Yes" , "No Internet Service"))
+
+p10 <- ggplot(data = customer) +
+  geom_bar(
+    mapping = aes (x = Contract, fill = Contract) ,
+    show.legend = F
+  ) + scale_x_discrete(labels = c("Month-to-month" , "One year" , "Two"))
+```
+
+```{r}
+grid.arrange(p1,p2,p3,p4,p5)
+```
+
+```{r}
+grid.arrange(p6,p7,p8,p9,p10)
+```
+
+LOGESTIC REGRESSION
+
+```{r}
+set.seed(1234)
+
+oneortwo <- sample(1:2 , length(customer$Churn) , replace = TRUE , prob = c(0.7,0.3))
+
+train <- customer[oneortwo == 1, ]
+test <- customer[oneortwo == 2, ]
+
+```
+
+```{r}
+logit <- glm(Churn ~ . , data = train , family = binomial(link = "logit"))
+summary(logit)
+```
+
+
+```{r}
+churn_pred <- predict(logit , train , type = "response")
+churn_pred[churn_pred >= 0.5] <- 1
+churn_pred[churn_pred < 0.5] <- 0
+```
+
+```{r}
+df <- data.frame(churn_pred , train$Churn)
+df
+```
+
+```{r}
+require(caret)
+library(e1071)
+```
+
+```{r}
+confusionMatrix(table(df))
+```
+
+```{r}
+churn_pred1 <- predict(logit , test , type = "response")
+churn_pred1[churn_pred1 >= 0.5] <- 1
+churn_pred1[churn_pred1 < 0.5] <- 0
+df_1 <- data.frame(churn_pred1 , test$Churn)
+confusionMatrix(table(df_1))
+```
+
+DECESION TREE
+
+```{r}
+library(rpart)
+library(rpart.plot)
+```
+
+```{r}
+treeFit <- rpart(Churn~. , data = train, method = 'class')
+rpart.plot(treeFit , box.col = c("red", "green"))
+```
+
+```{r}
+churn_pred2 <- predict(treeFit , test , type = 'class')
+results <- data.frame(churn_pred2 , test$Churn)
+head(results)
+```
+
+```{r}
+confusionMatrix(table(results))
+```
+
+RANDOM FOREST
+
+```{r}
+library(rpart)
+library(rpart.plot)
+library(randomForest)
+library(party)
+```
+
+```{r}
+forest <- randomForest(Churn~., data = train , importance = T , ntree = 120)
+varImpPlot(forest)
+```
+
+```{r}
+churn_pred3 <- predict(forest , test , type = 'class')
+results1 <- data.frame(churn_pred3 , test$Churn)
+confusionMatrix(table(results1))
+```
+
+XGBOOST
+
+```{r}
+#install.packages("xgboost")
+```
+
+```{r}
+library(xgboost)
+```
+
+```{r}
+xgb_train <- xgb.DMatrix(data = data.matrix(train[, 1:ncol(train)]) , label = train$Churn)
+
+xgb_test <- xgb.DMatrix(data = data.matrix(test[,1 : ncol(train)]) , label = test$Churn)
+
+```
+
+```{r}
+watchlist <- list(train = xgb_train , test = xgb_test)
+```
+
+```{r}
+parameters <- list(
+  # Booster Parameters
+  booster = "gbtree",
+  silent = 0,
+  eta = 0.3,
+  gamma = 0,
+  max_depth = 2,
+  min_child_weight = 1,
+  subsample = 1,
+  colsample_bytree = 1,
+  colsample_bylevel = 1,
+  lambda = 1,
+  alpha = 0,
+  #Task parameters
+  objective = "multi:softmax",
+  eval_metric = "mlogloss",
+  num_class = 20,
+  seed = 1234
+)
+```
+
+```{r}
+churn_train <- xgb.train(parameters , xgb_train , nrounds = 200 , watchlist , verbose = 0)
+```
+
+```{r}
+churn_pred4 <- predict(churn_train , xgb_test)
+
+churn_pred4 <- as.numeric(churn_pred4 > 1.5)
+
+```
+
+```{r}
+results2 <- data.frame(churn_pred4 , test$Churn)
+confusionMatrix(table(results2))
+```
+GBM
+```{r}
+#install.packages("gbm")
+```
+
+```{r}
+fitcontrol <- trainControl( method = "cv" , number = 5)
+```
+
+```{r}
+tune_Grid <- expand.grid(interaction.depth = 2, 
+                         n.trees = 50,
+                         shrinkage = 0.1,
+                         n.minobsinnode = 20)
+```
+
+
+```{r}
+set.seed(1234)
+
+churn_pred5 <- train(train$Churn ~ .  , data = train ,
+                     method = "gbm" , 
+                     trControl = fitcontrol,
+                     verbose = F,
+                     tuneGrid = tune_Grid)
+```
+
+
+```{r}
+head(train)
+```
+
+
+
+
+
